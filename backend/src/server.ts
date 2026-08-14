@@ -26,7 +26,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : ['http://localhost:3001'];
 
 // Force-add frontend origins to prevent any further issues
-allowedOrigins.push('http://localhost:5173', 'http://192.168.56.1:5173', 'http://10.130.97.178:5173');
+allowedOrigins.push('http://localhost:5173', 'http://192.168.56.1:5173', 'http://10.130.97.178:5173', 'https://pq-messenger-lite.netlify.app');
 
 console.log('[CORS] Allowed Origins initialized as:', allowedOrigins);
 
@@ -80,9 +80,9 @@ io.on('connection', (socket: Socket) => {
   socket.on('register', async (data: { userId: string; publicKeys: any }) => {
     try {
       const { userId, publicKeys } = data;
-      
+
       userManager.registerUser(userId, socket.id, publicKeys);
-      
+
       socket.emit('registered', {
         success: true,
         userId,
@@ -106,10 +106,10 @@ io.on('connection', (socket: Socket) => {
   socket.on('send-message', async (message: any) => {
     try {
       const recipientSocketId = userManager.getSocketId(message.recipient);
-      
+
       if (recipientSocketId) {
         io.to(recipientSocketId).emit('receive-message', message);
-        
+
         // Send delivery receipt
         socket.emit('message-delivered', {
           messageId: message.id,
@@ -123,7 +123,7 @@ io.on('connection', (socket: Socket) => {
           messageId: message.id,
           reason: 'recipient-offline'
         });
-        
+
         logger.warn(`Message failed - recipient offline: ${message.recipient}`);
       }
     } catch (error) {
@@ -136,7 +136,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('send-file-offer', async (offer: any) => {
     try {
       const recipientSocketId = userManager.getSocketId(offer.recipient);
-      
+
       if (recipientSocketId) {
         io.to(recipientSocketId).emit('receive-file-offer', offer);
         logger.info(`File offer sent: ${offer.fileName} to ${offer.recipient}`);
@@ -149,7 +149,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('file-answer', async (answer: any) => {
     try {
       const senderSocketId = userManager.getSocketId(answer.senderId);
-      
+
       if (senderSocketId) {
         io.to(senderSocketId).emit('file-answer-received', answer);
       }
@@ -162,7 +162,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('call-offer', async (offer: any) => {
     try {
       const result = await callSignaling.handleCallOffer(offer, socket.id);
-      
+
       if (result.success && result.recipientSocketId) {
         io.to(result.recipientSocketId).emit('incoming-call', offer);
         logger.info(`Call offer: ${offer.callerId} → ${offer.recipientId}`);
@@ -181,7 +181,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('call-answer', async (answer: any) => {
     try {
       const callerSocketId = callSignaling.getCallerSocket(answer.sessionId);
-      
+
       if (callerSocketId) {
         io.to(callerSocketId).emit('call-answered', answer);
         logger.info(`Call answered: session ${answer.sessionId}`);
@@ -194,7 +194,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('ice-candidate', async (candidate: any) => {
     try {
       const peerSocketId = callSignaling.getPeerSocket(candidate.sessionId, socket.id);
-      
+
       if (peerSocketId) {
         io.to(peerSocketId).emit('ice-candidate', candidate);
       }
@@ -206,11 +206,11 @@ io.on('connection', (socket: Socket) => {
   socket.on('end-call', async (data: { sessionId: string }) => {
     try {
       const peerSocketId = callSignaling.getPeerSocket(data.sessionId, socket.id);
-      
+
       if (peerSocketId) {
         io.to(peerSocketId).emit('call-ended', data);
       }
-      
+
       callSignaling.endCall(data.sessionId);
       logger.info(`Call ended: session ${data.sessionId}`);
     } catch (error) {
@@ -242,16 +242,16 @@ io.on('connection', (socket: Socket) => {
   // Disconnect handling
   socket.on('disconnect', () => {
     const userId = userManager.getUserBySocketId(socket.id);
-    
+
     if (userId) {
       userManager.removeUser(userId);
-      
+
       // Notify others
       socket.broadcast.emit('user-offline', { userId });
-      
+
       // End any active calls
       callSignaling.handleUserDisconnect(socket.id);
-      
+
       logger.info(`User disconnected: ${userId}`);
     } else {
       logger.info(`Client disconnected: ${socket.id}`);
