@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+build/
+**/build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Coverage and cache
+coverage/
+.cache/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
