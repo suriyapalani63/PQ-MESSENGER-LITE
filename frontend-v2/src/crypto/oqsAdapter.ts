@@ -45,9 +45,9 @@ export async function encapsulate(publicKey: Uint8Array): Promise<KEMSharedSecre
   const kem = await createMLKEM768();
   try {
     const { ciphertext, sharedSecret } = kem.encapsulate(publicKey);
-    return { 
-      ciphertext: new Uint8Array(ciphertext), 
-      sharedSecret: new Uint8Array(sharedSecret) 
+    return {
+      ciphertext: new Uint8Array(ciphertext),
+      sharedSecret: new Uint8Array(sharedSecret)
     };
   } finally {
     kem.destroy();
