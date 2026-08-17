@@ -103,7 +103,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (getSession(payload.conversationId)) return; // Already established
+    // If the peer is re-initiating the session (e.g. they refreshed their page), we MUST accept the new keys
+    // to avoid decrypt_errors when they start encrypting with their new sendKey.
+    // We overwrite any existing session in memory.
 
     const localKeys = await getLocalKeyPair(currentUser.id);
     if (!localKeys) return;
