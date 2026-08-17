@@ -18,9 +18,9 @@ class TransportManager {
     }
   }
 
-  connect(userId: string, publicKeys: Omit<PublicProfile, 'peerId' | 'name' | 'fingerprint'>) {
+  connect(userId: string, publicProfile: PublicProfile) {
     if (USE_SOCKETS) {
-      socketClient.connect(userId, publicKeys);
+      socketClient.connect(userId, publicProfile);
     }
   }
 

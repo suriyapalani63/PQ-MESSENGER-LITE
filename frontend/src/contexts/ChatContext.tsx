@@ -15,7 +15,7 @@ import type {
   SessionInitPayload, SessionAckPayload
 } from '@/types/messaging';
 import {
-  loadPeers, savePeers, loadMessages, saveMessages, buildConversationId, loadProfiles
+  loadPeers, savePeers, loadMessages, saveMessages, buildConversationId, loadProfiles, registerProfile
 } from '@/services/messagingService';
 import { useAuth } from '@/contexts/AuthContext';
 import { transport } from '@/services/transport';
@@ -301,7 +301,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           return newMap;
         });
       }
+      if (event.type === 'USERS_SYNC' as any) {
+        const onlineUsers = event.payload as any[];
+        onlineUsers.forEach(u => {
+          if (u.publicKeys && u.userId !== currentUser.peerId) {
+            const profile = u.publicKeys as any;
+            if (profile.name) {
+              registerProfile(profile);
+            }
+          }
+        });
+        setPeers(prev => prev.map(p => {
+          if (onlineUsers.some(u => u.userId === p.peerId)) return { ...p, status: 'online' };
+          return p;
+        }));
+      }
       if (event.type === 'USER_ONLINE' as any) {
+        const profile = event.payload as any;
+        if (profile && profile.name && event.senderPeerId !== currentUser.peerId) {
+          registerProfile(profile);
+        }
         setPeers(prev => prev.map(p => p.peerId === event.senderPeerId ? { ...p, status: 'online' } : p));
       }
       if (event.type === 'USER_OFFLINE' as any) {

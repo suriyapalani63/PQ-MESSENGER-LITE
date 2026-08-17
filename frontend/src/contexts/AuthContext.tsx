@@ -74,10 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             dsaPublicKeyBase64: bytesToBase64(keys.dsa.publicKey)
           };
           registerProfile(publicProfile);
-          transport.connect(stored.peerId, {
-            kemPublicKeyBase64: publicProfile.kemPublicKeyBase64,
-            dsaPublicKeyBase64: publicProfile.dsaPublicKeyBase64
-          });
+          transport.connect(stored.peerId, publicProfile);
         } else {
           clearCurrentUser();
         }
@@ -121,10 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     registerProfile(publicProfile);
     
-    transport.connect(profile.peerId, {
-      kemPublicKeyBase64: publicProfile.kemPublicKeyBase64,
-      dsaPublicKeyBase64: publicProfile.dsaPublicKeyBase64
-    });
+    transport.connect(profile.peerId, publicProfile);
 
     transport.send(`msg-${Date.now()}`, 'PROFILE_CREATED', profile.peerId, 'broadcast', '', { profile: publicProfile });
   }, [cryptoStatus]);

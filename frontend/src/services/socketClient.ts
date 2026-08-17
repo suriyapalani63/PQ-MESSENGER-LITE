@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import type { ChannelEvent, ChannelEventType, PublicProfile } from '@/types/messaging';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000' : '');
 
 type EventHandler = (event: ChannelEvent) => void;
 type ConnectionHandler = (status: 'disconnected' | 'connecting' | 'connected' | 'registered' | 'error') => void;
@@ -14,16 +14,18 @@ class SocketClient {
   private currentUserId: string | null = null;
   private currentPublicKeys: any = null;
 
-  connect(userId: string, publicKeys: Omit<PublicProfile, 'peerId' | 'name' | 'fingerprint'>) {
+  connect(userId: string, publicProfile: PublicProfile) {
     this.currentUserId = userId;
-    this.currentPublicKeys = publicKeys;
+    this.currentPublicKeys = publicProfile;
 
     if (!this.socket) {
       this.updateStatus('connecting');
       this.socket = io(SOCKET_URL, {
+        transports: ["polling", "websocket"],
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
+        timeout: 20000,
       });
 
       this.setupListeners();
@@ -58,22 +60,32 @@ class SocketClient {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
+      console.log('[socket] connected', this.socket?.id, this.socket?.io?.engine?.transport?.name);
       this.updateStatus('connected');
       this.register(); // Re-register on every connect/reconnect
     });
 
-    this.socket.on('disconnect', () => {
+    this.socket.on('disconnect', (reason) => {
+      console.warn('[socket] disconnected', reason);
       this.updateStatus('disconnected');
     });
 
     this.socket.on('connect_error', (err: any) => {
-      console.error('[Socket] Connect error:', err);
+      console.error('[socket] connect_error', err.message);
       this.updateStatus('error');
     });
 
     this.socket.on('registered', (data: any) => {
       this.updateStatus('registered');
       console.log('[Socket] Registered successfully.', data);
+      if (data.onlineUsers) {
+        this.dispatch({
+          type: 'USERS_SYNC' as any,
+          senderPeerId: 'system',
+          timestamp: Date.now(),
+          payload: data.onlineUsers
+        });
+      }
     });
 
     this.socket.on('receive-message', (message: any) => {

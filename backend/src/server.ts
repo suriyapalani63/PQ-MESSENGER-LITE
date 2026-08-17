@@ -75,6 +75,16 @@ app.get('/api/users/online', (req, res) => {
 // WebSocket connection handling
 io.on('connection', (socket: Socket) => {
   logger.info(`Client connected: ${socket.id}`);
+  console.log("[socket] connected", {
+    id: socket.id,
+    origin: socket.handshake.headers.origin,
+    address: socket.handshake.address,
+    transport: socket.conn.transport.name,
+  });
+
+  socket.conn.on("upgrade", () => {
+    console.log("[socket] upgraded transport", socket.conn.transport.name);
+  });
 
   // User registration
   socket.on('register', async (data: { userId: string; publicKeys: any }) => {
@@ -240,7 +250,11 @@ io.on('connection', (socket: Socket) => {
   });
 
   // Disconnect handling
-  socket.on('disconnect', () => {
+  socket.on('disconnect', (reason) => {
+    console.log("[socket] disconnected", {
+      id: socket.id,
+      reason,
+    });
     const userId = userManager.getUserBySocketId(socket.id);
 
     if (userId) {
@@ -266,10 +280,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-httpServer.listen(PORT, () => {
-  logger.info(`PQ Messenger server running on port ${PORT}`);
+httpServer.listen(PORT, "0.0.0.0", () => {
+  logger.info(`PQ Messenger server listening on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 

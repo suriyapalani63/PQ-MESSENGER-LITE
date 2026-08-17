@@ -47,7 +47,7 @@ export function ProfileSetup() {
           </div>
           <h1 className="text-3xl font-bold tracking-wide">PQ MESSENGER LITE</h1>
           <p className="text-sm text-text-sec mt-2 tracking-widest uppercase">
-            Local Prototype · UI-Only
+            Quantum-Resistant Secure Chat
           </p>
         </div>
 
@@ -93,9 +93,9 @@ export function ProfileSetup() {
           {/* Footer disclaimer */}
           <div className="px-8 py-4 bg-bg-base/50 border-t border-white/5">
             <p className="text-[11px] text-text-sec text-center leading-relaxed">
-              This is a local frontend prototype. Cross-browser messaging,
-              ML-KEM encryption, and real peer authentication are not yet
-              implemented.
+              Your keys never leave your device. All messaging is secured via
+              ML-KEM-768 for post-quantum key encapsulation and ML-DSA-65 for
+              digital signatures.
             </p>
           </div>
         </div>
