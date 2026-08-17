@@ -9,10 +9,16 @@ type ConnectionHandler = (status: 'disconnected' | 'connecting' | 'connected' | 
 
 class TransportManager {
   private handlers: EventHandler[] = [];
+  private lastSyncEvent: ChannelEvent | null = null;
   
   constructor() {
     if (USE_SOCKETS) {
-      socketClient.subscribe((event) => this.dispatch(event));
+      socketClient.subscribe((event) => {
+        if (event.type === ('USERS_SYNC' as any)) {
+          this.lastSyncEvent = event;
+        }
+        this.dispatch(event);
+      });
     } else {
       crossTabChannel.subscribe((event) => this.dispatch(event));
     }
@@ -41,6 +47,9 @@ class TransportManager {
 
   subscribe(handler: EventHandler): () => void {
     this.handlers.push(handler);
+    if (this.lastSyncEvent) {
+      setTimeout(() => handler(this.lastSyncEvent!), 0);
+    }
     return () => {
       this.handlers = this.handlers.filter(h => h !== handler);
     };
