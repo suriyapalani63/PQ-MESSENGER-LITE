@@ -77,7 +77,7 @@ export interface Message {
   isEncrypted: boolean;
   file?: FileAttachment;
   /** Reason for decryption failure if status is 'decrypt_failed' */
-  failureReason?: 'missing_session' | 'invalid_peer' | 'counter_mismatch' | 'invalid_signature' | 'decrypt_error';
+  failureReason?: string;
 }
 
 // ─── Cross-Tab Channel Events ──────────────────────────────────────

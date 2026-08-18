@@ -236,9 +236,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         status: 'delivered',
         isEncrypted: true
       };
-    } catch (err) {
+    } catch (err: any) {
       console.debug('[PQC] AES decryption failed', err);
-      return createFailedMsg('decrypt_error');
+      return createFailedMsg(`decrypt_error: ${err.message || String(err)}`);
     }
   };
 
