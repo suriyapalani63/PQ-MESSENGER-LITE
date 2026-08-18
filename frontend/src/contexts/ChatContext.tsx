@@ -205,14 +205,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const plaintext = await decryptPayload(envelope.ciphertext, envelope.iv, session.receiveChain.key);
       const msgData = JSON.parse(plaintext) as { text?: string; file?: FileAttachment };
       
+      const attachedFile = msgData.file;
+      const b64 = attachedFile?.dataBase64;
+      
       // If there's a file attached, store it locally using the transmitted dataBase64
-      if (msgData.file && msgData.file.dataBase64) {
+      if (attachedFile && b64) {
         try {
-          const fileBytes = base64ToBytes(msgData.file.dataBase64);
-          const blob = new Blob([fileBytes], { type: msgData.file.mimeType });
-          await storeFile(msgData.file.fileId, msgData.file.name, msgData.file.mimeType, blob);
-          // Remove base64 data to save memory before saving to local state
-          delete msgData.file.dataBase64;
+          const fileBytes = base64ToBytes(b64 as string);
+          const blob = new Blob([fileBytes], { type: attachedFile.mimeType });
+          await storeFile(attachedFile.fileId, attachedFile.name, attachedFile.mimeType, blob);
+          
+          // Remove base64 data to save localStorage quota before saving to local state
+          const { dataBase64, ...safeFile } = attachedFile;
+          msgData.file = safeFile as FileAttachment;
         } catch (err) {
           console.error('[PQC] Failed to store received file:', err);
         }
