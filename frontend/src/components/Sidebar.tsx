@@ -13,7 +13,7 @@ type NavItem =
   | { id: 'peerId'; label: string; icon: typeof MessageSquare; onClick: () => void };
 
 export function Sidebar({ activeTab, setActiveTab, onOpenPeerIdModal }: SidebarProps) {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, connectionStatus } = useAuth();
 
   const navItems: NavItem[] = [
     { id: 'messages', label: 'Messages', icon: MessageSquare },
@@ -98,8 +98,10 @@ export function Sidebar({ activeTab, setActiveTab, onOpenPeerIdModal }: SidebarP
           </div>
 
           <div className="pt-3 border-t border-white/5 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-success" />
-            <span className="text-xs text-text-sec">Local tab connection</span>
+            <ShieldCheck className={clsx("w-4 h-4", connectionStatus === 'connected' || connectionStatus === 'registered' ? "text-success" : connectionStatus === 'error' ? "text-red-400" : "text-yellow-400")} />
+            <span className="text-xs text-text-sec">
+              {connectionStatus === 'connected' || connectionStatus === 'registered' ? 'Socket Connected' : connectionStatus === 'error' ? 'Connection Error' : 'Connecting...'}
+            </span>
           </div>
         </div>
       </div>

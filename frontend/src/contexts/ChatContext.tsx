@@ -226,22 +226,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return;
 
     const processedEvents = new Set<string>();
+    let eventQueue = Promise.resolve();
 
-    const handleEvent = async (event: ChannelEvent) => {
+    const handleEvent = (event: ChannelEvent) => {
       if (event.senderPeerId === currentUser.peerId && event.senderPeerId !== 'system') return;
 
       const eventId = (event.payload as any)?.messageId || `${event.type}-${event.timestamp}-${event.senderPeerId}`;
       if (processedEvents.has(eventId)) return;
       processedEvents.add(eventId);
 
-      if (event.type === 'SESSION_INIT') {
-        await handleSessionInit(event.payload as SessionInitPayload, event.senderPeerId);
-      }
-      if (event.type === 'SESSION_ACK') {
-        await handleSessionAck(event.payload as SessionAckPayload, event.senderPeerId);
-      }
-      if (event.type === 'MESSAGE_SENT' || event.type === 'FILE_SHARED') {
-        const payload = event.payload as any; // envelope structure
+      eventQueue = eventQueue.then(async () => {
+        try {
+          if (event.type === 'SESSION_INIT') {
+            await handleSessionInit(event.payload as SessionInitPayload, event.senderPeerId);
+          } else if (event.type === 'SESSION_ACK') {
+            await handleSessionAck(event.payload as SessionAckPayload, event.senderPeerId);
+          } else if (event.type === 'MESSAGE_SENT' || event.type === 'FILE_SHARED') {
+            const payload = event.payload as any; // envelope structure
         const convId = payload.conversationId;
         const peer = peers.find(p => buildConversationId(currentUser.peerId, p.peerId) === convId);
         
@@ -335,6 +336,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (event.type === 'PRESENCE_PONG') {
         setPeers(prev => prev.map(p => p.peerId === (event.payload as any).peerId ? { ...p, status: 'online' } : p));
       }
+        } catch (err) {
+          console.error('[PQC] Error handling event sequentially', err);
+        }
+      });
     };
 
     const unsub = transport.subscribe(handleEvent);
