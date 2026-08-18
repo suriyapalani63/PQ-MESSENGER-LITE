@@ -24,6 +24,7 @@ import { getLocalKeyPair } from '@/crypto/keyStore';
 import { base64ToBytes, bytesToBase64 } from '@/crypto/encoding';
 import { deriveKeyHKDF, encryptPayload, decryptPayload, createEnvelope, verifyEnvelope } from '@/crypto/protocol';
 import { getSession, initSession, advanceSendCounter, checkAndAdvanceReceiveCounter } from '@/crypto/sessionStore';
+import { storeFile } from '@/services/fileStore';
 import { EncryptedEnvelope } from '@/types/crypto';
 
 interface ChatContextValue {
@@ -204,6 +205,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const plaintext = await decryptPayload(envelope.ciphertext, envelope.iv, session.receiveChain.key);
       const msgData = JSON.parse(plaintext);
       
+      // If there's a file attached, store it locally using the transmitted dataBase64
+      if (msgData.file && msgData.file.dataBase64) {
+        try {
+          const fileBytes = base64ToBytes(msgData.file.dataBase64);
+          const blob = new Blob([fileBytes], { type: msgData.file.mimeType });
+          await storeFile(msgData.file.fileId, msgData.file.name, msgData.file.mimeType, blob);
+          // Remove base64 data to save memory before saving to local state
+          delete msgData.file.dataBase64;
+        } catch (err) {
+          console.error('[PQC] Failed to store received file:', err);
+        }
+      }
+
       console.debug(`[PQC] Decrypt success. Msg ${metadata.msgId}, from ${senderPeerId}, IV: 12b, Ciphertext: ${envelope.ciphertext.length}b`);
 
       return {

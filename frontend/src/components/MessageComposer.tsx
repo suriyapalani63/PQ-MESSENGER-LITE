@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Paperclip, Send, Lock, Loader2 } from 'lucide-react'
 import type { FileAttachment } from '@/types/messaging'
 import { formatFileSize } from '@/services/messagingService'
+import { bytesToBase64 } from '@/crypto/encoding'
 import { generateFileId, storeFile, validateFileName, isAllowedMimeType, MAX_FILE_SIZE } from '@/services/fileStore'
 
 interface MessageComposerProps {
@@ -54,12 +55,17 @@ export function MessageComposer({ onSendMessage, onSendFileMessage, disabled }: 
       const fileId = generateFileId();
       await storeFile(fileId, file.name, file.type, file);
       
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const dataBase64 = bytesToBase64(bytes);
+
       const fileAttachment: FileAttachment = {
         fileId,
         name: file.name,
         size: formatFileSize(file.size),
         mimeType: file.type,
         byteSize: file.size,
+        dataBase64,
       };
       
       onSendFileMessage(fileAttachment);

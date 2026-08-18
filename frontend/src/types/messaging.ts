@@ -58,8 +58,10 @@ export interface FileAttachment {
   size: string;
   /** MIME type, e.g. "application/pdf". */
   mimeType: string;
-  /** Raw byte count for validation. */
+  /** Size in bytes. */
   byteSize: number;
+  /** Base64 encoded file data for transferring to other peers. */
+  dataBase64?: string;
 }
 
 export interface Message {
