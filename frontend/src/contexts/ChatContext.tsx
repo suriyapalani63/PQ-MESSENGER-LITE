@@ -212,7 +212,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (attachedFile && b64) {
         try {
           const fileBytes = base64ToBytes(b64 as string);
-          const blob = new Blob([fileBytes], { type: attachedFile.mimeType });
+          // Cast fileBytes to any to bypass strict TS DOM typing issues with Uint8Array vs BlobPart
+          const blob = new Blob([fileBytes as any], { type: attachedFile.mimeType });
           await storeFile(attachedFile.fileId, attachedFile.name, attachedFile.mimeType, blob);
           
           // Remove base64 data to save localStorage quota before saving to local state
