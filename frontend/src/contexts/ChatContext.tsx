@@ -203,7 +203,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // 6. Decrypt Payload
     try {
       const plaintext = await decryptPayload(envelope.ciphertext, envelope.iv, session.receiveChain.key);
-      const msgData = JSON.parse(plaintext);
+      const msgData = JSON.parse(plaintext) as { text?: string; file?: FileAttachment };
       
       // If there's a file attached, store it locally using the transmitted dataBase64
       if (msgData.file && msgData.file.dataBase64) {
